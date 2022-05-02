@@ -39,6 +39,13 @@ io.on("connection", socket => {
     console.log(currentGames[id])
   })
 
+  socket.on("doMove", (id, move) => {
+    if (currentGames[id]) {
+      otherPlayerId = currentGames[id].playerIds.find(playerId => playerId !== socket.id)
+      io.sockets.to(otherPlayerId).emit("moveDone", move)
+    }
+  })
+
 })
 
 const PORT = process.env.PORT || 3001
