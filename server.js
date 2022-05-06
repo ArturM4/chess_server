@@ -5,6 +5,11 @@ const server = http.createServer(app);
 const socketio = require("socket.io");
 var path = require('path');
 
+app.use(express.static(path.join(__dirname, 'build')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname + '/build/index.html'));
+});
+
 const io = socketio(server)
 
 let currentGames = {};
@@ -18,7 +23,6 @@ io.on("connection", socket => {
       creatorIsWhite: true
     }
     currentGames[id] = game
-    console.log(game)
   })
 
   socket.on("joinGame", (id) => {
@@ -36,7 +40,6 @@ io.on("connection", socket => {
           socket.emit("gameInit", !currentGames[id].creatorIsWhite)
       }
     }
-    console.log(currentGames[id])
   })
 
   socket.on("doMove", (id, move) => {
