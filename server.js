@@ -1,8 +1,11 @@
 const express = require('express');
 const http = require('http');
+const { v4: uuid } = require('uuid');
+
 const app = express();
 const server = http.createServer(app);
 const socketio = require("socket.io");
+
 var path = require('path');
 
 app.use(express.static(path.join(__dirname, 'build')));
@@ -12,7 +15,21 @@ app.get('*', (req, res) => {
 
 const io = socketio(server)
 
-let currentGames = {};
+let currentGames = {}
+let searchingGames = []
+
+function createGame(ids) {
+
+  let id = uuid()
+  let game = {
+    gameId: id,
+    playerIds: ids,
+    creatorIsWhite: true
+  }
+  currentGames[id] = game
+  io.sockets.to(currentGames[id].playerIds[0]).emit("gameInit", id)
+  io.sockets.to(currentGames[id].playerIds[1]).emit("gameInit", id)
+}
 
 io.on("connection", socket => {
 
@@ -23,6 +40,16 @@ io.on("connection", socket => {
       creatorIsWhite: true
     }
     currentGames[id] = game
+  })
+
+  socket.on("searchGame", () => {
+
+    if (searchingGames.length === 0)
+      searchingGames.push(socket.id)
+    else {
+      playerSearching = searchingGames.pop()
+      createGame([playerSearching, socket.id])
+    }
   })
 
   socket.on("joinGame", (id) => {
