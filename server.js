@@ -43,7 +43,7 @@ io.on("connection", socket => {
   })
 
   socket.on("doMove", (id, move) => {
-    if (currentGames[id]) {
+    if (currentGames[id] && currentGames[id].playerIds.includes(socket.id)) {
       otherPlayerId = currentGames[id].playerIds.find(playerId => playerId !== socket.id)
       io.sockets.to(otherPlayerId).emit("moveDone", move)
     }
