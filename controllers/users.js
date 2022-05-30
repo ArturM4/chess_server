@@ -78,11 +78,13 @@ usersRouter.post('/friends', async (req, res, next) => {
     const sender = await User.findById(senderId)
     const receiver = await User.findById(receiverId)
 
-    sender.friends = sender.friends.concat(receiver._id)
-    receiver.friends = receiver.friends.concat(sender._id)
+    if (!sender.friends.includes(receiver._id) && !receiver.friends.includes(sender._id)) {
+      sender.friends = sender.friends.concat(receiver._id)
+      receiver.friends = receiver.friends.concat(sender._id)
 
-    await sender.save()
-    await receiver.save()
+      await sender.save()
+      await receiver.save()
+    }
 
     res.status(200).end()
   } catch (err) {
