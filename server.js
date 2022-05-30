@@ -14,9 +14,9 @@ const handleError = require('./middleware/handleError');
 const usersRouter = require('./controllers/users');
 const loginRouter = require('./controllers/login');
 const initChessSocket = require('./chessSocket');
+const User = require('./models/User');
 
 connectDB()
-
 
 app.use(cors())
 app.use(express.json())
@@ -33,12 +33,46 @@ app.get('*', (req, res) => {
 
 const io = socketio(server)
 
-
-
-
-
+let onlineLoggedUsers = {}
 io.on("connection", socket => {
   initChessSocket(socket, io)
+
+
+  socket.on("userLogged", (userId) => {
+    onlineLoggedUsers[socket.id] = userId
+    console.log(onlineLoggedUsers)
+  })
+
+  socket.on("userLogout", (userId) => {
+    delete onlineLoggedUsers[socket.id]
+    console.log(onlineLoggedUsers)
+  })
+
+  socket.on("disconnect", () => {
+    delete onlineLoggedUsers[socket.id]
+    console.log(onlineLoggedUsers)
+  })
+
+  socket.on("friendRequest", (receiverUsername, senderId, senderUsername) => {
+    User.findOne({ username: receiverUsername }).then((result) => {
+      if (result) {
+        console.log(result)
+        Object.keys(onlineLoggedUsers).find(key => onlineLoggedUsers[key] === result._id.toString());
+
+        const receiverSocketId = Object.keys(onlineLoggedUsers).find(key => onlineLoggedUsers[key] === result._id.toString());
+
+        if (receiverSocketId && socket.id !== receiverSocketId) {
+          const friendRequest = {
+            senderId,
+            receiverId: result._id.toString(),
+            senderUsername
+          }
+          io.sockets.to(receiverSocketId).emit("friendRequest", friendRequest)
+        }
+      }
+    })
+  })
+
 })
 
 
