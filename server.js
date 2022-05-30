@@ -40,23 +40,19 @@ io.on("connection", socket => {
 
   socket.on("userLogged", (userId) => {
     onlineLoggedUsers[socket.id] = userId
-    console.log(onlineLoggedUsers)
   })
 
   socket.on("userLogout", (userId) => {
     delete onlineLoggedUsers[socket.id]
-    console.log(onlineLoggedUsers)
   })
 
   socket.on("disconnect", () => {
     delete onlineLoggedUsers[socket.id]
-    console.log(onlineLoggedUsers)
   })
 
   socket.on("friendRequest", (receiverUsername, senderId, senderUsername) => {
     User.findOne({ username: receiverUsername }).then((result) => {
       if (result) {
-        console.log(result)
         Object.keys(onlineLoggedUsers).find(key => onlineLoggedUsers[key] === result._id.toString());
 
         const receiverSocketId = Object.keys(onlineLoggedUsers).find(key => onlineLoggedUsers[key] === result._id.toString());
