@@ -34,8 +34,13 @@ app.get('*', (req, res) => {
 const io = socketio(server)
 
 let onlineLoggedUsers = {}
+
+function getSocketIdFromId(id) {
+  return Object.keys(onlineLoggedUsers).find(key => onlineLoggedUsers[key] === id);
+}
+
 io.on("connection", socket => {
-  initChessSocket(socket, io)
+  initChessSocket(socket, io, getSocketIdFromId)
 
 
   socket.on("userLogged", (userId) => {
@@ -53,21 +58,36 @@ io.on("connection", socket => {
   socket.on("friendRequest", (receiverUsername, senderId, senderUsername) => {
     User.findOne({ username: receiverUsername }).then((result) => {
       if (result) {
-        Object.keys(onlineLoggedUsers).find(key => onlineLoggedUsers[key] === result._id.toString());
-
-        const receiverSocketId = Object.keys(onlineLoggedUsers).find(key => onlineLoggedUsers[key] === result._id.toString());
+        const receiverSocketId = getSocketIdFromId(result._id.toString());
 
         if (receiverSocketId && socket.id !== receiverSocketId) {
           const friendRequest = {
             senderId,
             receiverId: result._id.toString(),
-            senderUsername
+            senderUsername,
+            type: 'friendRequest'
           }
           io.sockets.to(receiverSocketId).emit("friendRequest", friendRequest)
         }
       }
     })
   })
+  socket.on("challengeFriend", (receiverId, senderId, senderUsername) => {
+
+    const receiverSocketId = getSocketIdFromId(receiverId);
+
+    if (receiverSocketId && socket.id !== receiverSocketId) {
+      const challengeFriend = {
+        senderId,
+        receiverId,
+        senderUsername,
+        type: 'challenge'
+      }
+      io.sockets.to(receiverSocketId).emit("challengeFriend", challengeFriend)
+    }
+
+  })
+
 
 })
 
