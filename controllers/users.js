@@ -3,7 +3,7 @@ const User = require('../models/User');
 const bcrypt = require('bcrypt')
 
 usersRouter.get('/', (req, res) => {
-  User.find({}).then((result) => {
+  User.find({}).populate('friends').then((result) => {
     res.json(result)
   })
 })
@@ -11,7 +11,7 @@ usersRouter.get('/', (req, res) => {
 usersRouter.get('/:id', (req, res, next) => {
   const id = req.params.id
 
-  const user = User.findById(id).then((result) => {
+  const user = User.findById(id).populate('friends').then((result) => {
     res.json(result)
   }).catch((err) => {
     next(err)
@@ -71,5 +71,26 @@ usersRouter.post('/', async (req, res, next) => {
   }
 
 });
+
+usersRouter.post('/friends', async (req, res, next) => {
+  const { senderId, receiverId } = req.body
+  try {
+    const sender = await User.findById(senderId)
+    const receiver = await User.findById(receiverId)
+
+    if (!sender.friends.includes(receiver._id) && !receiver.friends.includes(sender._id)) {
+      sender.friends = sender.friends.concat(receiver._id)
+      receiver.friends = receiver.friends.concat(sender._id)
+
+      await sender.save()
+      await receiver.save()
+    }
+
+    res.status(200).end()
+  } catch (err) {
+    next(err)
+  }
+});
+
 
 module.exports = usersRouter

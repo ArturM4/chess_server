@@ -8,18 +8,16 @@ let searchingGames = {
   classic: []
 }
 
-const initChessSocket = (socket, io) => {
-  socket.on("createGame", (id) => {
-    let game = {
-      gameId: id,
-      playerIds: [socket.id],
-      creatorIsWhite: true
-    }
-    currentGames[id] = game
+const initChess = (socket, io, getSocketIdFromId) => {
+
+  socket.on("createGame", (senderId, receiverId) => {
+    const senderSocketId = getSocketIdFromId(senderId);
+    const receiverSocketId = getSocketIdFromId(receiverId);
+
+    createGame([senderSocketId, receiverSocketId])
   })
 
   socket.on("searchGame", (mode) => {
-
     if (searchingGames[mode].length === 0)
       searchingGames[mode].push(socket.id)
     else {
@@ -29,19 +27,15 @@ const initChessSocket = (socket, io) => {
   })
 
   socket.on("joinGame", (id) => {
-    if (currentGames[id]?.playerIds) {
-      if (currentGames[id].playerIds.length < 2 && !currentGames[id].playerIds.includes(socket.id)) {
-        currentGames[id].playerIds.push(socket.id)
-        if (currentGames[id].playerIds.length === 2) {
+    if (currentGames[id]?.playerIds && currentGames[id].playerIds.includes(socket.id)) {
+      if (currentGames[id].playersReady < 2) {
+        currentGames[id].playersReady++
+        if (currentGames[id].playersReady === 2) {
           io.sockets.to(currentGames[id].playerIds[0]).emit("gameInit", currentGames[id].creatorIsWhite, currentGames[id].mode)
           io.sockets.to(currentGames[id].playerIds[1]).emit("gameInit", !currentGames[id].creatorIsWhite, currentGames[id].mode)
         }
-      } else if (currentGames[id].playerIds.length === 2 && currentGames[id].playerIds.includes(socket.id)) {
-        if (socket.id === currentGames[id].playerIds[0])
-          socket.emit("gameInit", currentGames[id].creatorIsWhite, currentGames[id].mode)
-        else
-          socket.emit("gameInit", !currentGames[id].creatorIsWhite, currentGames[id].mode)
       }
+
     }
   })
 
@@ -74,11 +68,12 @@ const initChessSocket = (socket, io) => {
       gameId: id,
       playerIds: ids,
       creatorIsWhite: true,
+      playersReady: 0,
       mode
     }
     currentGames[id] = game
-    io.sockets.to(currentGames[id].playerIds[0]).emit("gameInit", id)
-    io.sockets.to(currentGames[id].playerIds[1]).emit("gameInit", id)
+    io.sockets.to(currentGames[id].playerIds[0]).emit("gameCreated", id)
+    io.sockets.to(currentGames[id].playerIds[1]).emit("gameCreated", id)
   }
 
   function cancelSearch(id) {
@@ -93,4 +88,4 @@ const initChessSocket = (socket, io) => {
 
 
 
-module.exports = initChessSocket
+module.exports = initChess
