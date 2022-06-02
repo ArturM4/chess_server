@@ -13,8 +13,9 @@ const connectDB = require('./mongodb')
 const handleError = require('./middleware/handleError');
 const usersRouter = require('./controllers/users');
 const loginRouter = require('./controllers/login');
-const initChessSocket = require('./chessSocket');
 const User = require('./models/User');
+const initChess = require('./socket/chessListeners');
+const initFriends = require('./socket/friendsListeners');
 
 connectDB()
 
@@ -40,9 +41,9 @@ function getSocketIdFromId(id) {
 }
 
 io.on("connection", socket => {
-  initChessSocket(socket, io, getSocketIdFromId)
 
-
+  initChess(socket, io, getSocketIdFromId)
+  initFriends(socket, io, getSocketIdFromId)
   socket.on("userLogged", (userId) => {
     onlineLoggedUsers[socket.id] = userId
   })
@@ -55,38 +56,7 @@ io.on("connection", socket => {
     delete onlineLoggedUsers[socket.id]
   })
 
-  socket.on("friendRequest", (receiverUsername, senderId, senderUsername) => {
-    User.findOne({ username: receiverUsername }).then((result) => {
-      if (result) {
-        const receiverSocketId = getSocketIdFromId(result._id.toString());
 
-        if (receiverSocketId && socket.id !== receiverSocketId) {
-          const friendRequest = {
-            senderId,
-            receiverId: result._id.toString(),
-            senderUsername,
-            type: 'friendRequest'
-          }
-          io.sockets.to(receiverSocketId).emit("friendRequest", friendRequest)
-        }
-      }
-    })
-  })
-  socket.on("challengeFriend", (receiverId, senderId, senderUsername) => {
-
-    const receiverSocketId = getSocketIdFromId(receiverId);
-
-    if (receiverSocketId && socket.id !== receiverSocketId) {
-      const challengeFriend = {
-        senderId,
-        receiverId,
-        senderUsername,
-        type: 'challenge'
-      }
-      io.sockets.to(receiverSocketId).emit("challengeFriend", challengeFriend)
-    }
-
-  })
 
 
 })

@@ -8,7 +8,7 @@ let searchingGames = {
   classic: []
 }
 
-const initChessSocket = (socket, io, getSocketIdFromId) => {
+const initChess = (socket, io, getSocketIdFromId) => {
 
   socket.on("createGame", (senderId, receiverId) => {
     const senderSocketId = getSocketIdFromId(senderId);
@@ -88,4 +88,4 @@ const initChessSocket = (socket, io, getSocketIdFromId) => {
 
 
 
-module.exports = initChessSocket
+module.exports = initChess
