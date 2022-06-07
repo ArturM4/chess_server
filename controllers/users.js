@@ -3,10 +3,17 @@ const User = require('../models/User');
 const bcrypt = require('bcrypt')
 
 usersRouter.get('/', (req, res) => {
-  User.find({}).populate('friends').then((result) => {
-    res.json(result)
-  })
+  if (req.query.populated && req.query.populated === 'true') {
+    User.find({}).populate('friends').then((result) => {
+      res.json(result)
+    })
+  } else {
+    User.find({}).then((result) => {
+      res.json(result)
+    })
+  }
 })
+
 
 usersRouter.get('/:id', (req, res, next) => {
   const id = req.params.id
