@@ -1,14 +1,24 @@
 const { v4: uuid } = require('uuid');
+const User = require('../models/User');
 
 let currentGames = {}
 let searchingGames = {
-  bullet: [],
-  blitz: [],
-  rapid: [],
-  classic: []
+  ranked: {
+    bullet: [],
+    blitz: [],
+    rapid: [],
+    classic: []
+  },
+  casual: {
+    bullet: [],
+    blitz: [],
+    rapid: [],
+    classic: []
+  },
+
 }
 
-const initChess = (socket, io, getSocketIdFromId) => {
+const initChess = (socket, io, getSocketIdFromId, getIdFromSocketId) => {
 
   socket.on("createGame", (senderId, receiverId) => {
     const senderSocketId = getSocketIdFromId(senderId);
@@ -17,12 +27,12 @@ const initChess = (socket, io, getSocketIdFromId) => {
     createGame([senderSocketId, receiverSocketId])
   })
 
-  socket.on("searchGame", (mode) => {
-    if (searchingGames[mode].length === 0)
-      searchingGames[mode].push(socket.id)
+  socket.on("searchGame", (mode, ranked) => {
+    if (searchingGames[ranked][mode].length === 0)
+      searchingGames[ranked][mode].push(socket.id)
     else {
-      playerSearching = searchingGames[mode].pop()
-      createGame([playerSearching, socket.id], mode)
+      playerSearching = searchingGames[ranked][mode].pop()
+      createGame([playerSearching, socket.id], mode, ranked)
     }
   })
 
@@ -53,6 +63,31 @@ const initChess = (socket, io, getSocketIdFromId) => {
     }
   })
 
+  socket.on("gameEnded", (id, result, yourId) => {
+    console.log('ended')
+
+    if (currentGames[id] && currentGames[id].ranked === 'ranked' && currentGames[id].ended === false) {
+      opponentId = currentGames[id].bbddIds.find(playerId => playerId !== yourId)
+      console.log('ended rr', yourId, opponentId, result)
+
+      if (yourId && opponentId) {
+        console.log('ended ranked', yourId, opponentId, result)
+        if (result === 'win') {
+          changeElo(yourId, 25)
+          changeElo(opponentId, -25)
+        } else if (result === 'loss') {
+          changeElo(yourId, -25)
+          changeElo(opponentId, 25)
+        }
+      }
+      currentGames[id].ended = true
+    } else if (currentGames[id].ended === true) {
+      console.log('delet')
+      delete currentGames[id]
+    }
+  })
+
+
   socket.on("cancelSearch", () => {
     cancelSearch(socket.id)
   })
@@ -61,15 +96,38 @@ const initChess = (socket, io, getSocketIdFromId) => {
     cancelSearch(socket.id)
   })
 
-  function createGame(ids, mode) {
+  async function changeElo(id, eloToChange) {
+    const user = await User.findById(id)
+    if (user) {
+      const newElo = (user.elo + eloToChange >= 0) ? (user.elo + eloToChange >= 0) : 0
+      await User.findByIdAndUpdate(id, { elo: newElo })
+    }
+  }
 
+  function createGame(ids, mode, ranked) {
     let id = uuid()
-    let game = {
-      gameId: id,
-      playerIds: ids,
-      creatorIsWhite: true,
-      playersReady: 0,
-      mode
+    let game;
+    if (ranked === 'ranked') {
+      let bbddIds = [getIdFromSocketId(ids[0]), getIdFromSocketId(ids[1])]
+      game = {
+        gameId: id,
+        playerIds: ids,
+        bbddIds,
+        creatorIsWhite: true,
+        playersReady: 0,
+        mode,
+        ranked,
+        ended: false
+      }
+    } else {
+      game = {
+        gameId: id,
+        playerIds: ids,
+        creatorIsWhite: true,
+        playersReady: 0,
+        mode,
+        ranked
+      }
     }
     currentGames[id] = game
     io.sockets.to(currentGames[id].playerIds[0]).emit("gameCreated", id)
@@ -77,11 +135,13 @@ const initChess = (socket, io, getSocketIdFromId) => {
   }
 
   function cancelSearch(id) {
-    Object.keys(searchingGames).forEach(function (key) {
-      var index = searchingGames[key].indexOf(id);
-      if (index > -1) {
-        searchingGames[key].splice(index, 1);
-      }
+    Object.keys(searchingGames).forEach(function (rank) {
+      Object.keys(searchingGames[rank]).forEach(function (mode) {
+        var index = searchingGames[rank][mode].indexOf(id);
+        if (index > -1) {
+          searchingGames[rank][mode].splice(index, 1);
+        }
+      });
     });
   }
 }

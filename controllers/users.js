@@ -14,6 +14,12 @@ usersRouter.get('/', (req, res) => {
   }
 })
 
+usersRouter.get('/sorted', (req, res) => {
+  User.find({}).sort({ elo: -1 }).then((result) => {
+    res.json(result)
+  })
+})
+
 
 usersRouter.get('/:id', (req, res, next) => {
   const id = req.params.id
