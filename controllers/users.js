@@ -65,8 +65,10 @@ usersRouter.post('/', async (req, res, next) => {
 
   const { username, password } = req.body
   try {
-    if (username.length < 1 || password.length < 6)
+    if (username.length < 1 || password.length < 6) {
       res.status(400).json({ error: 'Incorrect format of username or password' }).end()
+      return;
+    }
 
     encryptedPassword = await bcrypt.hash(password, 10)
     const newUser = new User({
@@ -76,8 +78,8 @@ usersRouter.post('/', async (req, res, next) => {
       friends: []
     })
 
-
     const userCreated = await newUser.save()
+
     res.json(userCreated)
   } catch (err) {
     next(err)
