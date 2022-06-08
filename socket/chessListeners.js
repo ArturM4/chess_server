@@ -64,14 +64,11 @@ const initChess = (socket, io, getSocketIdFromId, getIdFromSocketId) => {
   })
 
   socket.on("gameEnded", (id, result, yourId) => {
-    console.log('ended')
 
     if (currentGames[id] && currentGames[id].ranked === 'ranked' && currentGames[id].ended === false) {
       opponentId = currentGames[id].bbddIds.find(playerId => playerId !== yourId)
-      console.log('ended rr', yourId, opponentId, result)
 
       if (yourId && opponentId) {
-        console.log('ended ranked', yourId, opponentId, result)
         if (result === 'win') {
           changeElo(yourId, 25)
           changeElo(opponentId, -25)
@@ -82,7 +79,6 @@ const initChess = (socket, io, getSocketIdFromId, getIdFromSocketId) => {
       }
       currentGames[id].ended = true
     } else if (currentGames[id].ended === true) {
-      console.log('delet')
       delete currentGames[id]
     }
   })
@@ -99,7 +95,7 @@ const initChess = (socket, io, getSocketIdFromId, getIdFromSocketId) => {
   async function changeElo(id, eloToChange) {
     const user = await User.findById(id)
     if (user) {
-      const newElo = (user.elo + eloToChange >= 0) ? (user.elo + eloToChange >= 0) : 0
+      const newElo = (user.elo + eloToChange >= 0) ? (user.elo + eloToChange) : 0
       await User.findByIdAndUpdate(id, { elo: newElo })
     }
   }
