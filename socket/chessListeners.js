@@ -71,6 +71,7 @@ const initChess = (socket, io, getSocketIdFromId, getIdFromSocketId) => {
       if (yourId && opponentId) {
         if (result === 'win') {
           changeElo(yourId, 25)
+          changeCoins(yourId, 30)
           changeElo(opponentId, -25)
         } else if (result === 'loss') {
           changeElo(yourId, -25)
@@ -97,6 +98,14 @@ const initChess = (socket, io, getSocketIdFromId, getIdFromSocketId) => {
     if (user) {
       const newElo = (user.elo + eloToChange >= 0) ? (user.elo + eloToChange) : 0
       await User.findByIdAndUpdate(id, { elo: newElo })
+    }
+  }
+
+  async function changeCoins(id, coinsToChange) {
+    const user = await User.findById(id)
+    if (user) {
+      const newCoins = (user.coins + coinsToChange)
+      await User.findByIdAndUpdate(id, { coins: newCoins })
     }
   }
 

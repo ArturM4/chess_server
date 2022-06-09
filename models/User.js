@@ -12,6 +12,12 @@ const userSchema = new Schema({
     required: true
   },
   elo: Number,
+  coins: Number,
+  config: {
+    pieces: String,
+    board: String,
+  },
+  itemsPurchased: [String],
   friends: [{
     type: mongoose.SchemaTypes.ObjectId,
     ref: 'User'
