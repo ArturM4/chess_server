@@ -40,9 +40,13 @@ function getSocketIdFromId(id) {
   return Object.keys(onlineLoggedUsers).find(key => onlineLoggedUsers[key] === id);
 }
 
+function getIdFromSocketId(id) {
+  return onlineLoggedUsers[id]
+}
+
 io.on("connection", socket => {
 
-  initChess(socket, io, getSocketIdFromId)
+  initChess(socket, io, getSocketIdFromId, getIdFromSocketId)
   initFriends(socket, io, getSocketIdFromId)
   socket.on("userLogged", (userId) => {
     onlineLoggedUsers[socket.id] = userId

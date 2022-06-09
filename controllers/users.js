@@ -3,10 +3,23 @@ const User = require('../models/User');
 const bcrypt = require('bcrypt')
 
 usersRouter.get('/', (req, res) => {
-  User.find({}).populate('friends').then((result) => {
+  if (req.query.populated && req.query.populated === 'true') {
+    User.find({}).populate('friends').then((result) => {
+      res.json(result)
+    })
+  } else {
+    User.find({}).then((result) => {
+      res.json(result)
+    })
+  }
+})
+
+usersRouter.get('/sorted', (req, res) => {
+  User.find({}).sort({ elo: -1 }).then((result) => {
     res.json(result)
   })
 })
+
 
 usersRouter.get('/:id', (req, res, next) => {
   const id = req.params.id
@@ -52,8 +65,10 @@ usersRouter.post('/', async (req, res, next) => {
 
   const { username, password } = req.body
   try {
-    if (username.length < 1 || password.length < 6)
+    if (username.length < 1 || password.length < 6) {
       res.status(400).json({ error: 'Incorrect format of username or password' }).end()
+      return;
+    }
 
     encryptedPassword = await bcrypt.hash(password, 10)
     const newUser = new User({
@@ -63,8 +78,8 @@ usersRouter.post('/', async (req, res, next) => {
       friends: []
     })
 
-
     const userCreated = await newUser.save()
+
     res.json(userCreated)
   } catch (err) {
     next(err)
