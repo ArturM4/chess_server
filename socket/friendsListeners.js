@@ -1,3 +1,5 @@
+const User = require("../models/User");
+
 const initFriends = (socket, io, getSocketIdFromId) => {
 
   socket.on("friendRequest", (receiverUsername, senderId, senderUsername) => {
