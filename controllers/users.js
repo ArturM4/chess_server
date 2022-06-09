@@ -107,5 +107,27 @@ usersRouter.post('/friends', async (req, res, next) => {
   }
 });
 
+usersRouter.post('/:id/purchase/:item', async (req, res, next) => {
+  const id = req.params.id
+  const item = req.params.item
+
+  try {
+    const user = await User.findById(id)
+
+    if (!user.itemsPurchased.includes(item) && user.coins >= 100) {
+      user.itemsPurchased = user.itemsPurchased.concat(item)
+      user.coins -= 100
+
+      await user.save()
+      res.status(200).json(user).end()
+
+    } else {
+      res.status(403).json({ error: 'insufficient coins' }).end()
+    }
+
+  } catch (err) {
+    next(err)
+  }
+});
 
 module.exports = usersRouter
