@@ -41,8 +41,8 @@ const initChess = (socket, io, getSocketIdFromId, getIdFromSocketId) => {
       if (currentGames[id].playersReady < 2) {
         currentGames[id].playersReady++
         if (currentGames[id].playersReady === 2) {
-          io.sockets.to(currentGames[id].playerIds[0]).emit("gameInit", currentGames[id].creatorIsWhite, currentGames[id].mode)
-          io.sockets.to(currentGames[id].playerIds[1]).emit("gameInit", !currentGames[id].creatorIsWhite, currentGames[id].mode)
+          io.sockets.to(currentGames[id].playerIds[0]).emit("gameInit", currentGames[id].creatorIsWhite, currentGames[id].mode, currentGames[id].ranked)
+          io.sockets.to(currentGames[id].playerIds[1]).emit("gameInit", !currentGames[id].creatorIsWhite, currentGames[id].mode, currentGames[id].ranked)
         }
       }
 

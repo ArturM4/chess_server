@@ -1,6 +1,7 @@
 const usersRouter = require('express').Router()
 const User = require('../models/User');
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcrypt');
+const userValidation = require('../middleware/userValidation');
 
 usersRouter.get('/', (req, res) => {
   if (req.query.populated && req.query.populated === 'true') {
@@ -32,34 +33,6 @@ usersRouter.get('/:id', (req, res, next) => {
 
 });
 
-usersRouter.delete('/:id', (req, res, next) => {
-  const id = req.params.id
-  User.findByIdAndDelete(id).then((result) => {
-    res.status(204).end()
-  }).catch((err) => {
-    next(err)
-  })
-
-});
-
-usersRouter.delete('/', (req, res, next) => {
-  User.deleteMany({}).then((result) => {
-    res.status(204).end()
-  }).catch((err) => {
-    next(err)
-  })
-
-});
-
-usersRouter.put('/:id', (req, res) => {
-  const id = req.params.id
-  const userInfo = req.body
-
-  User.findByIdAndUpdate(id, userInfo, { new: true }).then(result => {
-    res.json(result)
-  })
-
-});
 
 usersRouter.post('/', async (req, res, next) => {
 
@@ -75,6 +48,12 @@ usersRouter.post('/', async (req, res, next) => {
       username,
       password: encryptedPassword,
       elo: 0,
+      coins: 0,
+      config: {
+        pieces: 'standard',
+        board: 'standard'
+      },
+      itemsPurchased: [],
       friends: []
     })
 
@@ -87,7 +66,7 @@ usersRouter.post('/', async (req, res, next) => {
 
 });
 
-usersRouter.post('/friends', async (req, res, next) => {
+usersRouter.post('/friends', userValidation, async (req, res, next) => {
   const { senderId, receiverId } = req.body
   try {
     const sender = await User.findById(senderId)
@@ -107,7 +86,7 @@ usersRouter.post('/friends', async (req, res, next) => {
   }
 });
 
-usersRouter.post('/:id/purchase/:item', async (req, res, next) => {
+usersRouter.post('/:id/purchase/:item', userValidation, async (req, res, next) => {
   const id = req.params.id
   const item = req.params.item
 
