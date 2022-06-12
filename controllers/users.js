@@ -101,7 +101,7 @@ usersRouter.post('/:id/purchase/:item', userValidation, async (req, res, next) =
       res.status(200).json(user).end()
 
     } else {
-      res.status(403).json({ error: 'insufficient coins' }).end()
+      res.status(400).json({ error: 'insufficient coins' }).end()
     }
 
   } catch (err) {
