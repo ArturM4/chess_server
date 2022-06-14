@@ -2,6 +2,7 @@ const usersRouter = require('express').Router()
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const userValidation = require('../middleware/userValidation');
+const userExtractor = require('../middleware/userExtractor');
 
 usersRouter.get('/', (req, res) => {
   if (req.query.populated && req.query.populated === 'true') {
@@ -107,6 +108,22 @@ usersRouter.post('/:id/purchase/:item', userValidation, async (req, res, next) =
   } catch (err) {
     next(err)
   }
+});
+
+usersRouter.delete('/:id', userExtractor, (req, res, next) => {
+  const id = req.params.id
+  const senderValidatedId = req.userId
+  if (id === senderValidatedId) {
+    User.findByIdAndDelete(id).then((result) => {
+      res.status(204).end()
+    }).catch((err) => {
+      next(err)
+    })
+  } else {
+    return response.status(401).json({ error: 'user unauthorized' })
+  }
+
+
 });
 
 module.exports = usersRouter
